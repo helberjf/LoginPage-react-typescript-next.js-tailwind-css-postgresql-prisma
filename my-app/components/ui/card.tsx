@@ -1,5 +1,5 @@
 // src/components/ui/card.tsx
-import { cn } from "@/lib/utils/cn";
+import { cn } from "../../lib/utils/cn";
 
 export function Card({
   className,

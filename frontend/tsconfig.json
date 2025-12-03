@@ -33,6 +33,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "../backend/prisma/src/lib/prisma.ts"  ],
   "exclude": ["node_modules"]
 }

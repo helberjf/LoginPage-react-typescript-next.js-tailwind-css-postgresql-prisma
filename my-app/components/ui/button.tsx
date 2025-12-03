@@ -1,6 +1,6 @@
 // src/components/ui/button.tsx
 import { forwardRef } from "react";
-import { cn } from "@/lib/utils/cn";
+import { cn } from "../../lib/utils/cn";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {}

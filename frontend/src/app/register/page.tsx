@@ -1,44 +1,42 @@
 "use client";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useState } from 'react';
-import { AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react"
+import { signIn } from "next-auth/react";
 
-
-const registerSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório').min(3, 'Nome deve ter pelo menos 3 caracteres'),
-  email: z.string().min(1, 'Email é obrigatório').email('Email inválido'),
-  password: z.string()
-    .min(1, 'Senha é obrigatória')
-    .min(6, 'Senha deve ter pelo menos 6 caracteres')
-    .regex(/[A-Z]/, 'Senha deve conter pelo menos uma letra maiúscula')
-    .regex(/[0-9]/, 'Senha deve conter pelo menos um número'),
-  confirmPassword: z.string().min(1, 'Confirmação é obrigatória'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'As senhas não coincidem',
-  path: ['confirmPassword'],
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+    email: z.string().email("Email inválido"),
+    password: z
+      .string()
+      .min(6, "Senha deve ter pelo menos 6 caracteres")
+      .regex(/[A-Z]/, "Senha deve conter pelo menos 1 letra maiúscula")
+      .regex(/[0-9]/, "Senha deve conter pelo menos 1 número"),
+    confirmPassword: z.string().min(1, "Confirmação é obrigatória"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  const { register: registerUser, isLoading } = useAuth();
   const router = useRouter();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
     reset,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -46,25 +44,40 @@ export default function Register() {
 
   const onSubmit = async (data: RegisterFormData) => {
     setError(null);
-    try {
-      await registerUser(data.name, data.email, data.password);
-      setSuccess(true);
-      reset();
 
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      }),
+    });
 
-    } catch (err) {
-      setError("Erro ao registrar. Tente novamente.");
-      console.error(err);
+    const json = await res.json();
+
+    if (!res.ok) {
+      setError(json.error || "Erro ao registrar.");
+      return;
     }
+
+    setSuccess(true);
+    reset();
+
+    // Login automático após criar a conta
+    await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+
+    router.push("/dashboard");
   };
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
-        
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -78,7 +91,6 @@ export default function Register() {
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
           {error && (
             <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/30 flex gap-3">
               <AlertCircle className="w-5 h-5 text-destructive" />
@@ -88,66 +100,95 @@ export default function Register() {
 
           {success && (
             <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 flex gap-3">
-              <span className="text-sm text-green-600">✓ Conta criada!</span>
+              <span className="text-sm text-green-600">
+                ✓ Conta criada com sucesso!
+              </span>
             </div>
           )}
 
           {/* Name */}
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">Nome Completo</label>
-            <Input id="name" {...register("name")} className={errors.name ? "border-destructive" : ""} />
-            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+            <label className="text-sm font-medium">Nome Completo</label>
+            <Input {...register("name")} />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name.message}</p>
+            )}
           </div>
 
           {/* Email */}
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">Email</label>
-            <Input id="email" {...register("email")} className={errors.email ? "border-destructive" : ""} />
-            {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
+            <label className="text-sm font-medium">Email</label>
+            <Input {...register("email")} />
+            {errors.email && (
+              <p className="text-sm text-destructive">{errors.email.message}</p>
+            )}
           </div>
 
           {/* Password */}
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">Senha</label>
-            <Input id="password" type="password" {...register("password")} className={errors.password ? "border-destructive" : ""} />
-            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
+            <label className="text-sm font-medium">Senha</label>
+            <Input type="password" {...register("password")} />
+            {errors.password && (
+              <p className="text-sm text-destructive">
+                {errors.password.message}
+              </p>
+            )}
           </div>
 
-          {/* Confirm Password */}
+          {/* Confirm */}
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">Confirmar Senha</label>
-            <Input id="confirmPassword" type="password" {...register("confirmPassword")} className={errors.confirmPassword ? "border-destructive" : ""} />
-            {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>}
+            <label className="text-sm font-medium">Confirmar Senha</label>
+            <Input type="password" {...register("confirmPassword")} />
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
 
           {/* Terms */}
           <label className="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 rounded mt-1" required />
             <span className="text-sm text-muted-foreground">
-              Concordo com os <a href="#" className="text-primary">Termos</a> e <a href="#" className="text-primary">Privacidade</a>.
+              Concordo com os <a className="text-primary">Termos</a> e{" "}
+              <a className="text-primary">Privacidade</a>.
             </span>
           </label>
 
           {/* Submit */}
-          <Button type="submit" className="w-full bg-primary" disabled={isLoading}>
-            {isLoading ? (
+          <Button
+            type="submit"
+            className="w-full bg-primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 w-4 h-4 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Criando conta...
               </>
-            ) : "Criar Conta"}
+            ) : (
+              "Criar Conta"
+            )}
           </Button>
-          <button onClick={() => signIn("google")}>
-            Login com Google
-          </button>
 
+          {/* Google Login */}
+          <Button
+            type="button"
+            className="w-full mt-2"
+            variant="outline"
+            onClick={() => signIn("google")}
+          >
+            Login com Google
+          </Button>
         </form>
 
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Já tem conta? <a href="/login" className="text-primary">Faça login</a>
+          Já tem conta?{" "}
+          <a href="/login" className="text-primary">
+            Faça login
+          </a>
         </p>
-
       </div>
     </div>
   );
