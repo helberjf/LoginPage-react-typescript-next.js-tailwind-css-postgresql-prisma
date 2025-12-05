@@ -1,4 +1,4 @@
-import { prisma } from "./prisma";
+import prisma from "@/lib/prisma";
 import { mailgun } from "@/lib/mailgun";
 import crypto from "crypto";
 

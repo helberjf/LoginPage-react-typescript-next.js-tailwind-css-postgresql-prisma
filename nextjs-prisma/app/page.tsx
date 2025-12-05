@@ -1,14 +1,15 @@
 // src/app/page.tsx
-import ThemeSwitcher from "./components/ThemeSwitcher";
+"use client";
+import ThemeSwitcher from "../components/ThemeSwitcher";
 import Link from "next/link";
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-6 p-6">
-      <h1 className="text-3xl font-bold">Bem-vindo ao sistema</h1>
+    <main className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 text-center text-neutral-500 dark:text-neutral-400 border border-neutral-300 dark:border-neutral-700 rounded-md p-6">
+      <h1 className="text-3xl font-bold">Bem-vindo ao sistema de produtos</h1>
 
       <p className="text-neutral-500 dark:text-neutral-400 text-center max-w-md">
-        Autenticação com Next.js 16, Auth.js, Prisma, Tailwind e PostgreSQL.
+        Autenticação com Next.js 16, Auth.js, Prisma e PostgreSQL.
       </p>
 
       <div className="flex gap-4">
